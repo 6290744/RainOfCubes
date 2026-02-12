@@ -6,12 +6,12 @@ public class Colorizer : MonoBehaviour
     
     private void OnEnable()
     {
-        _cube.OnTouched += SetColor;
+        _cube.PlatformTouched += SetColor;
     }
 
     private void OnDisable()
     {
-        _cube.OnTouched -= SetColor;
+        _cube.PlatformTouched -= SetColor;
     }
 
     private void SetColor(Cube cube)

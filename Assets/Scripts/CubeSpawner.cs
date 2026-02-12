@@ -6,13 +6,13 @@ using Random = UnityEngine.Random;
 public class CubeSpawner : MonoBehaviour
 {
     [SerializeField] private Cube _cubePrefab;
-    [SerializeField] private float _spawnInterval = 0.1f;
+    [SerializeField] private float _spawnInterval = 0.2f;
     [SerializeField] private float _spawnHeight = 20f;
     [SerializeField] private float _spawnRadius = 5;
     [SerializeField] private int _poolMaxSize = 30;
     [SerializeField] private int _poolCapacity = 30;
-    [SerializeField] private int _minimalCubeLifetime = 2;
-    [SerializeField] private int _maximalCubeLifeTime = 5;
+    
+    private bool _isSpawning;
     
     private ObjectPool<Cube> _cubesPool;
 
@@ -20,8 +20,8 @@ public class CubeSpawner : MonoBehaviour
     {
         _cubesPool = new ObjectPool<Cube>(
             createFunc: () => Instantiate(_cubePrefab),
-            actionOnGet: (cube) => ActionOnGet(cube),
-            actionOnRelease: cube => ActionOnRelease(cube),
+            actionOnGet: (cube) => OnGetFromPool(cube),
+            actionOnRelease: cube => OnReleaseToPool(cube),
             actionOnDestroy: cube => Destroy(cube.gameObject),
             collectionCheck: true,
             defaultCapacity: _poolCapacity,
@@ -30,33 +30,25 @@ public class CubeSpawner : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log(_cubesPool.CountAll);
-        InvokeRepeating(nameof(GetCubeFromPool), 0f, _spawnInterval);
+        _isSpawning = true;
+        StartCoroutine(SpawnLoop());
     }
-
-    private void GetCubeFromPool()
-    {
-        if (_cubesPool.CountActive < _poolMaxSize)
-        {
-            _cubesPool.Get();
-        }
-    }
-
-    private void ActionOnGet(Cube cube)
+    
+    private void OnGetFromPool(Cube cube)
     {
         cube.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
         cube.transform.position = GetStartPosition();
         cube.gameObject.SetActive(true);
         
-        cube.OnTouched += StartCubeLifetime;
+        cube.LifetimeEnded += _cubesPool.Release;
     }
 
-    private void ActionOnRelease(Cube cube)
+    private void OnReleaseToPool(Cube cube)
     {
         cube.gameObject.SetActive(false);
         cube.SetDefaultState();
         
-        cube.OnTouched -= StartCubeLifetime;
+        cube.LifetimeEnded -= _cubesPool.Release;
     }
 
     private Vector3 GetStartPosition()
@@ -66,18 +58,17 @@ public class CubeSpawner : MonoBehaviour
         
         return new Vector3(coordinateX, _spawnHeight, coordinateZ);
     }
-
-    private void StartCubeLifetime(Cube cube)
-    {
-        StartCoroutine(CubeLifetimeStopwatch(cube));
-    }
     
-    private IEnumerator CubeLifetimeStopwatch(Cube cube)
+    private IEnumerator SpawnLoop()
     {
-        int time = Random.Range(_minimalCubeLifetime, _maximalCubeLifeTime);
+        while (_isSpawning)
+        {
+            if (_cubesPool.CountActive < _poolMaxSize)
+            {
+                _cubesPool.Get();
+            }
         
-        yield return new WaitForSeconds(time);
-
-        _cubesPool.Release(cube);
+            yield return new WaitForSeconds(_spawnInterval);
+        }
     }
 }
