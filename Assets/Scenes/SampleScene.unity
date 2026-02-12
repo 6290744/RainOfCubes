@@ -286,13 +286,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _cubePrefab: {fileID: 8527468359577435037, guid: e673c992804044d93832b593dd267fc9, type: 3}
-  _spawnInterval: 0.1
+  _spawnInterval: 0.2
   _spawnHeight: 20
   _spawnRadius: 5
   _poolMaxSize: 30
   _poolCapacity: 30
-  _minimalCubeLifetime: 2
-  _maximalCubeLifeTime: 5
 --- !u!4 &337189268
 Transform:
   m_ObjectHideFlags: 0
